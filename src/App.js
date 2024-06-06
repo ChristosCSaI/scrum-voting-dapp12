@@ -12,8 +12,8 @@ const App = () => {
   const [owner, setOwner] = useState('');
   const [balance, setBalance] = useState('');
   const [votes, setVotes] = useState({ elon: 0, mark: 0, sam: 0 });
-  const [network, setNetwork] = useState('');
   const [isCorrectNetwork, setIsCorrectNetwork] = useState(false);
+  const [history, setHistory] = useState([]);
 
   useEffect(() => {
     loadWeb3();
@@ -21,13 +21,15 @@ const App = () => {
   }, []);
 
   const loadWeb3 = async () => {
-    if (window.ethereum) {
+    if (window.ethereum && window.ethereum.isMetaMask) {
       window.web3 = new Web3(window.ethereum);
-      await window.ethereum.enable();
-    } else if (window.web3) {
-      window.web3 = new Web3(window.web3.currentProvider);
+      try {
+        await window.ethereum.request({ method: 'eth_requestAccounts' });
+      } catch (error) {
+        console.error("User denied account access", error);
+      }
     } else {
-      window.alert('Non-Ethereum browser detected. You should consider trying MetaMask!');
+      window.alert('Please install MetaMask to use this DApp.');
     }
   };
 
@@ -36,13 +38,14 @@ const App = () => {
     const accounts = await web3.eth.getAccounts();
     setAccount(accounts[0]);
 
-    const networkId = await web3.eth.net.getId();
-    const networkName = await web3.eth.net.getNetworkType();
-    setNetwork(networkName);
-    setIsCorrectNetwork(networkId === 11155111); // Sepolia network ID
+    const networkId = parseInt(await web3.eth.net.getId(), 10);
+    console.log('Network ID:', networkId);
+    console.log('Account:', accounts[0]);
 
     if (networkId === 11155111) {
-      const networkData = ScrumVoting.networks[networkId];
+      console.log('Connected to Sepolia Network');
+      setIsCorrectNetwork(true);
+      const networkData = ScrumVoting.networks ? ScrumVoting.networks[networkId] : null;
       if (networkData) {
         const scrumVoting = new web3.eth.Contract(ScrumVoting.abi, networkData.address);
         setContract(scrumVoting);
@@ -59,37 +62,106 @@ const App = () => {
       } else {
         window.alert('Smart contract not deployed to detected network.');
       }
+    } else {
+      console.log('Not connected to Sepolia Network. Current Network ID:', networkId);
+      setIsCorrectNetwork(false);
+    }
+  };
+
+  const loadHistory = async () => {
+    if (!contract) {
+      console.error("Contract is not loaded");
+      return;
+    }
+    try {
+      const historyCount = await contract.methods.historyCount().call();
+      const history = [];
+      for (let i = 0; i < historyCount; i++) {
+        const record = await contract.methods.getHistory(i).call();
+        history.push(record);
+      }
+      setHistory(history);
+    } catch (error) {
+      console.error("Error fetching history", error);
     }
   };
 
   const vote = async (proposal) => {
-    await contract.methods.vote(proposal).send({ from: account, value: Web3.utils.toWei('0.01', 'ether') });
-    loadBlockchainData();
+    if (!contract) {
+      console.error("Contract is not loaded");
+      return;
+    }
+    try {
+      await contract.methods.vote(proposal).send({ from: account, value: Web3.utils.toWei('0.01', 'ether') });
+      loadBlockchainData();
+    } catch (error) {
+      console.error("Error voting", error);
+    }
   };
 
   const declareWinner = async () => {
-    await contract.methods.declareWinner().send({ from: account });
-    loadBlockchainData();
+    if (!contract) {
+      console.error("Contract is not loaded");
+      return;
+    }
+    try {
+      await contract.methods.declareWinner().send({ from: account });
+      loadBlockchainData();
+    } catch (error) {
+      console.error("Error declaring winner", error);
+    }
   };
 
   const resetVoting = async () => {
-    await contract.methods.resetVoting().send({ from: account });
-    loadBlockchainData();
+    if (!contract) {
+      console.error("Contract is not loaded");
+      return;
+    }
+    try {
+      await contract.methods.resetVoting().send({ from: account });
+      loadBlockchainData();
+    } catch (error) {
+      console.error("Error resetting voting", error);
+    }
   };
 
   const withdraw = async () => {
-    await contract.methods.withdraw().send({ from: account });
-    loadBlockchainData();
+    if (!contract) {
+      console.error("Contract is not loaded");
+      return;
+    }
+    try {
+      await contract.methods.withdraw().send({ from: account });
+      loadBlockchainData();
+    } catch (error) {
+      console.error("Error withdrawing funds", error);
+    }
   };
 
   const changeOwner = async (newOwner) => {
-    await contract.methods.changeOwner(newOwner).send({ from: account });
-    loadBlockchainData();
+    if (!contract) {
+      console.error("Contract is not loaded");
+      return;
+    }
+    try {
+      await contract.methods.changeOwner(newOwner).send({ from: account });
+      loadBlockchainData();
+    } catch (error) {
+      console.error("Error changing owner", error);
+    }
   };
 
   const destroyContract = async () => {
-    await contract.methods.destroyContract().send({ from: account });
-    loadBlockchainData();
+    if (!contract) {
+      console.error("Contract is not loaded");
+      return;
+    }
+    try {
+      await contract.methods.destroyContract().send({ from: account });
+      loadBlockchainData();
+    } catch (error) {
+      console.error("Error destroying contract", error);
+    }
   };
 
   if (!window.ethereum) {
@@ -107,30 +179,48 @@ const App = () => {
       <p>Contract Owner: {owner}</p>
       <p>Contract Balance: {balance} ETH</p>
 
-      <div className="proposal">
-        <h2>Elon</h2>
-        <img src={elonImage} alt="Elon" />
-        <button onClick={() => vote('Elon')}>Vote</button>
-        <p>Votes: {votes.elon}</p>
-      </div>
-      <div className="proposal">
-        <h2>Mark</h2>
-        <img src={markImage} alt="Mark" />
-        <button onClick={() => vote('Mark')}>Vote</button>
-        <p>Votes: {votes.mark}</p>
-      </div>
-      <div className="proposal">
-        <h2>Sam</h2>
-        <img src={samImage} alt="Sam" />
-        <button onClick={() => vote('Sam')}>Vote</button>
-        <p>Votes: {votes.sam}</p>
+      <div className="proposals">
+        <div className="proposal">
+          <h2>Elon</h2>
+          <img src={elonImage} alt="Elon" />
+          <button onClick={() => vote('Elon')}>Vote</button>
+          <p className="vote-count">Votes: {votes.elon}</p>
+        </div>
+        <div className="proposal">
+          <h2>Mark</h2>
+          <img src={markImage} alt="Mark" />
+          <button onClick={() => vote('Mark')}>Vote</button>
+          <p className="vote-count">Votes: {votes.mark}</p>
+        </div>
+        <div className="proposal">
+          <h2>Sam</h2>
+          <img src={samImage} alt="Sam" />
+          <button onClick={() => vote('Sam')}>Vote</button>
+          <p className="vote-count">Votes: {votes.sam}</p>
+        </div>
       </div>
 
-      <button onClick={declareWinner}>Declare Winner</button>
-      <button onClick={resetVoting}>Reset</button>
-      <button onClick={withdraw}>Withdraw</button>
-      <button onClick={() => changeOwner(prompt('Enter new owner address:'))}>Change Owner</button>
-      <button onClick={destroyContract}>Destroy</button>
+      <div className="button-container">
+        <button onClick={declareWinner}>Declare Winner</button>
+        <button onClick={resetVoting}>Reset</button>
+        <button onClick={withdraw}>Withdraw</button>
+        <button onClick={() => changeOwner(prompt('Enter new owner address:'))}>Change Owner</button>
+        <button onClick={destroyContract}>Destroy</button>
+        <button onClick={loadHistory}>History</button>
+      </div>
+
+      {history.length > 0 && (
+        <div className="history-container">
+          <h2>Voting History</h2>
+          <ul>
+            {history.map((record, index) => (
+              <li key={index}>
+                Vote ID: {record.voteId}, Winner: {record.winner}, Votes: {record.votes}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 };

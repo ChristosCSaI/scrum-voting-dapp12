@@ -1,35 +1,122 @@
-.app-container {
-  text-align: center;
-  padding: 20px;
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f0f8ff;
+  margin: 0;
+  padding: 0;
 }
 
-.proposal {
-  display: inline-block;
-  margin: 20px;
+.app-container {
+  max-width: 1200px;
+  margin: 20px auto;
   padding: 20px;
-  border: 1px solid #ccc;
+  background-color: #ffffff;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
   border-radius: 10px;
 }
 
+h1 {
+  text-align: center;
+  color: #333333;
+  margin-bottom: 20px;
+}
+
+p {
+  text-align: center;
+  color: #666666;
+  margin: 5px 0;
+}
+
+.proposals {
+  display: flex;
+  justify-content: space-around;
+  flex-wrap: wrap;
+}
+
+.proposal {
+  width: 30%;
+  margin: 10px;
+  padding: 20px;
+  background-color: #f9f9f9;
+  border: 1px solid #dddddd;
+  border-radius: 10px;
+  text-align: center;
+  transition: background-color 0.3s ease;
+}
+
+.proposal:hover {
+  background-color: #e6f7ff;
+}
+
 .proposal img {
-  width: 150px;
-  height: 150px;
-  object-fit: cover;
+  max-width: 80%;
+  height: auto;
   border-radius: 50%;
+  margin-bottom: 10px;
 }
 
 button {
-  display: block;
-  margin: 10px auto;
+  display: inline-block;
   padding: 10px 20px;
+  margin: 10px;
+  font-size: 16px;
+  color: #ffffff;
+  background-color: #28a745;
   border: none;
   border-radius: 5px;
-  background-color: #28a745;
-  color: #fff;
   cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+button:hover {
+  background-color: #218838;
 }
 
 button:disabled {
-  background-color: #ccc;
+  background-color: #cccccc;
   cursor: not-allowed;
+}
+
+.vote-count {
+  font-size: 18px;
+  color: #333333;
+  margin-top: 10px;
+}
+
+.button-container {
+  text-align: center;
+  margin: 20px 0;
+}
+
+.history-container {
+  margin-top: 20px;
+}
+
+.history-container h2 {
+  text-align: center;
+  color: #333;
+}
+
+.history-container ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.history-container li {
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  margin: 5px 0;
+  padding: 10px;
+}
+
+@media (max-width: 768px) {
+  .proposal {
+    width: 45%;
+  }
+}
+
+@media (max-width: 480px) {
+  .proposal {
+    width: 100%;
+  }
 }
