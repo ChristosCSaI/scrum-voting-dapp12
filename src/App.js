@@ -68,24 +68,6 @@ const App = () => {
     }
   };
 
-  const loadHistory = async () => {
-    if (!contract) {
-      console.error("Contract is not loaded");
-      return;
-    }
-    try {
-      const historyCount = await contract.methods.historyCount().call();
-      const history = [];
-      for (let i = 0; i < historyCount; i++) {
-        const record = await contract.methods.getHistory(i).call();
-        history.push(record);
-      }
-      setHistory(history);
-    } catch (error) {
-      console.error("Error fetching history", error);
-    }
-  };
-
   const vote = async (proposal) => {
     if (!contract) {
       console.error("Contract is not loaded");
@@ -93,7 +75,11 @@ const App = () => {
     }
     try {
       await contract.methods.vote(proposal).send({ from: account, value: Web3.utils.toWei('0.01', 'ether') });
-      loadBlockchainData();
+      // Fetch updated votes after voting
+      const elonVotes = await contract.methods.elonVotes().call();
+      const markVotes = await contract.methods.markVotes().call();
+      const samVotes = await contract.methods.samVotes().call();
+      setVotes({ elon: elonVotes, mark: markVotes, sam: samVotes });
     } catch (error) {
       console.error("Error voting", error);
     }
@@ -161,6 +147,22 @@ const App = () => {
       loadBlockchainData();
     } catch (error) {
       console.error("Error destroying contract", error);
+    }
+  };
+
+  const loadHistory = async () => {
+    if (contract) {
+      try {
+        const historyCount = await contract.methods.historyCount().call();
+        const history = [];
+        for (let i = 0; i < historyCount; i++) {
+          const record = await contract.methods.getHistory(i).call();
+          history.push(record);
+        }
+        setHistory(history);
+      } catch (error) {
+        console.error("Error fetching history", error);
+      }
     }
   };
 
